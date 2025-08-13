@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Education LMS • Dashboard</title>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    body{background:#fbfcff;font-family:Inter,system-ui}
+    .sidebar{background:#ffffff;min-height:100vh;border-right:1px solid #eef1f6}
+    .card{border:0;box-shadow:0 10px 25px rgba(0,0,0,.05)}
+    .pill{background:#eef4ff;color:#3355cc;padding:.25rem .5rem;border-radius:999px;font-size:.75rem}
+  </style>
+</head>
+<body>
+<div class="container-fluid">
+  <div class="row g-0">
+    <aside class="col-12 col-lg-2 sidebar p-3">
+      <div class="fw-bold mb-2"><i class="bi bi-mortarboard me-1"></i> LearnHive</div>
+      <nav class="nav flex-column small">
+        <a class="nav-link" href="#courses">Courses</a>
+        <a class="nav-link" href="#students">Students</a>
+        <a class="nav-link active" href="#analytics">Analytics</a>
+      </nav>
+    </aside>
+    <main class="col-12 col-lg-10 p-3">
+      <h5 class="mb-3">Analytics</h5>
+      <div class="row g-3">
+        <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Active Students</div><div class="fs-3 fw-bold">1,284</div></div></div>
+        <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Completion Rate</div><div class="fs-3 fw-bold">72%</div></div></div>
+        <div class="col-md-4"><div class="card p-3"><div class="text-muted small">Avg. Score</div><div class="fs-3 fw-bold">84</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><h6 class="mb-0">Enrollments</h6><canvas id="enrollChart" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Device Mix</h6><canvas id="deviceChart" height="170"></canvas></div></div>
+      </div>
+
+      <h6 id="students" class="mt-4 mb-2">Recent Submissions</h6>
+      <div class="card p-3">
+        <div class="table-responsive">
+          <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>Student</th><th>Course</th><th>Assignment</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Ayesha N</td><td>Web Dev</td><td>Project 2</td><td><span class="pill">Graded</span></td></tr>
+              <tr><td>Bilal H</td><td>Data Sci</td><td>Quiz 4</td><td><span class="pill" style="background:#fff4e6;color:#a35a00">Pending</span></td></tr>
+              <tr><td>Sara K</td><td>UI/UX</td><td>Case Study</td><td><span class="pill" style="background:#e8fff3;color:#0a9150">Submitted</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  new Chart(document.getElementById('enrollChart'),{type:'bar',data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul'],datasets:[{label:'Enrollments',data:[210,260,280,300,340,360,390]}]}});
+  new Chart(document.getElementById('deviceChart'),{type:'doughnut',data:{labels:['Desktop','Mobile','Tablet'],datasets:[{data:[55,38,7]}]}});
+</script>
+</body></html>

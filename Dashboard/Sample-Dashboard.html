@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-Dashboard Pack (5-in-1) • Bootstrap + Chart.js</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0e1320; --surface:#141a2a; --text:#e9eef5; --muted:#93a1b7;
+  --grid:#263148; --brand:#7aa2ff; --brand2:#64d2c3; --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+}
+[data-theme="light"]{ --bg:#f5f7fb; --surface:#ffffff; --text:#0b1324; --muted:#5d6a7a; --grid:#e6e9f2; }
+html,body{height:100%} body{background:var(--bg); color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
+.app{min-height:100vh; display:grid; grid-template-columns:260px 1fr; grid-template-rows:64px 1fr; grid-template-areas:"sidebar topbar" "sidebar main";}
+.sidebar{grid-area:sidebar; background:var(--surface); border-right:1px solid rgba(255,255,255,.08); position:sticky; top:0; height:100vh}
+.topbar{grid-area:topbar; background:linear-gradient(90deg,rgba(122,162,255,.15),rgba(100,210,195,.15)); border-bottom:1px solid rgba(255,255,255,.08); backdrop-filter:blur(8px)}
+.main{grid-area:main; padding:20px}
+.nav-link{color:var(--muted); border-radius:12px; margin:6px 10px; display:flex; align-items:center; gap:10px}
+.nav-link:hover,.nav-link.active{background:rgba(122,162,255,.18); color:var(--text)}
+.card{background:var(--surface); border:1px solid rgba(255,255,255,.08)}
+.kpi .value{font-weight:800; font-size:1.6rem}
+.text-muted{color:var(--muted)!important}
+.badge-soft{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12)}
+.section{display:none; animation:fade .3s ease both} .section.active{display:block}
+@keyframes fade{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+.table thead th{border-bottom:1px solid rgba(255,255,255,.12)} .table tbody td{border-top:1px solid rgba(255,255,255,.06)}
+@media (max-width: 992px){ .app{grid-template-columns:0 1fr} .sidebar{position:fixed; left:-280px; width:260px; transition:left .25s} .sidebar.open{left:0} }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="p-3 d-flex align-items-center gap-2 border-bottom border-opacity-25">
+      <i class="bi bi-boxes fs-4 text-info"></i><strong>Dash Pack</strong>
+    </div>
+    <nav class="mt-2">
+      <a class="nav-link active" data-section="d1"><i class="bi bi-heart-pulse"></i> AI Medical</a>
+      <a class="nav-link" data-section="d2"><i class="bi bi-bag-check"></i> E-commerce</a>
+      <a class="nav-link" data-section="d3"><i class="bi bi-currency-bitcoin"></i> Crypto</a>
+      <a class="nav-link" data-section="d4"><i class="bi bi-mortarboard"></i> Education</a>
+      <a class="nav-link" data-section="d5"><i class="bi bi-cloud-sun"></i> Weather</a>
+    </nav>
+    <div class="p-3">
+      <button id="themeToggle" class="btn btn-sm btn-outline-light w-100"><i class="bi bi-moon-stars me-1"></i> Theme</button>
+    </div>
+  </aside>
+
+  <!-- Topbar -->
+  <header class="topbar d-flex align-items-center px-3 gap-2">
+    <button class="btn btn-outline-light d-lg-none" id="menuBtn"><i class="bi bi-list"></i></button>
+    <div class="input-group" style="max-width:560px;">
+      <span class="input-group-text border-0 bg-transparent text-muted"><i class="bi bi-search"></i></span>
+      <input class="form-control border-0 bg-transparent text-white" placeholder="Search across dashboards">
+    </div>
+    <div class="ms-auto d-flex align-items-center gap-2">
+      <span class="badge badge-soft rounded-pill">Demo Pack</span>
+      <button class="btn btn-outline-light"><i class="bi bi-bell"></i></button>
+      <div class="dropdown">
+        <button class="btn btn-outline-light dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-person-circle me-1"></i> Admin</button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="#">Profile</a></li>
+          <li><a class="dropdown-item" href="#">Settings</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="#">Sign out</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- D1: AI Medical -->
+    <section id="d1" class="section active">
+      <h5 class="mb-3">AI Medical Assistant • Overview</h5>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Admissions</div><div class="value">42</div><div class="progress mt-2"><div class="progress-bar bg-info" style="width:66%"></div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Avg. Wait</div><div class="value">13m</div><div class="progress mt-2"><div class="progress-bar bg-success" style="width:74%"></div></div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Critical Cases</div><div class="value text-danger">6</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Bed Utilization</div><div class="value">76%</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><div class="d-flex justify-content-between"><h6 class="mb-0">Admissions & Discharges</h6><small class="text-muted">Last 7 days</small></div><canvas id="c1a" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Severity Mix</h6><canvas id="c1b" height="160"></canvas></div></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="d-flex align-items-center"><h6 class="mb-0">Patients</h6><div class="ms-auto small text-muted">Demo</div></div>
+        <div class="table-responsive mt-2">
+          <table class="table align-middle mb-0"><thead><tr><th>MRN</th><th>Name</th><th>Ward</th><th>Risk</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>30214</td><td>Henry Liu</td><td>ER</td><td><span class="badge text-bg-danger">High</span></td><td class="text-end"><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+            <tr><td>29877</td><td>Amira Qureshi</td><td>Oncology</td><td><span class="badge text-bg-success">Low</span></td><td class="text-end"><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+            <tr><td>30001</td><td>Nora James</td><td>ICU</td><td><span class="badge text-bg-warning">Medium</span></td><td class="text-end"><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+          </tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- D2: E-commerce -->
+    <section id="d2" class="section">
+      <h5 class="mb-3">E-commerce Sales • Snapshot</h5>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Revenue</div><div class="value">$48.2k</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Orders</div><div class="value">1,204</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Conv. Rate</div><div class="value">2.8%</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Refunds</div><div class="value text-warning">1.1%</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><div class="d-flex justify-content-between"><h6 class="mb-0">Revenue & Orders</h6><small class="text-muted">30 days</small></div><canvas id="c2a" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Category Share</h6><canvas id="c2b" height="160"></canvas></div></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="table-responsive"><table class="table align-middle mb-0">
+          <thead><tr><th>SKU</th><th>Product</th><th>Units</th><th>GMV</th><th></th></tr></thead>
+          <tbody>
+            <tr><td>A-100</td><td>Wireless Headphones</td><td>324</td><td>$12.4k</td><td class="text-end"><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+            <tr><td>A-220</td><td>Smart Watch</td><td>279</td><td>$10.1k</td><td class="text-end"><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+            <tr><td>B-311</td><td>4K Monitor</td><td>142</td><td>$18.8k</td><td class="text-end"><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+          </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- D3: Crypto -->
+    <section id="d3" class="section">
+      <h5 class="mb-3">Crypto Trading • Overview</h5>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Portfolio</div><div class="value">$126,400</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">24h P/L</div><div class="value text-success">+$2,130</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Win Rate</div><div class="value">57%</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Risk</div><div class="value text-danger">High</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><div class="d-flex justify-content-between"><h6 class="mb-0">BTC / ETH Price</h6><small class="text-muted">Sparkline</small></div><canvas id="c3a" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Allocation</h6><canvas id="c3b" height="160"></canvas></div></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="table-responsive"><table class="table align-middle mb-0">
+          <thead><tr><th>Pair</th><th>Side</th><th>Size</th><th>Entry</th><th>PNL</th></tr></thead>
+          <tbody>
+            <tr><td>BTC/USDT</td><td>Long</td><td>0.8</td><td>66,200</td><td class="text-success">+$420</td></tr>
+            <tr><td>ETH/USDT</td><td>Short</td><td>8.0</td><td>3,350</td><td class="text-danger">-$120</td></tr>
+            <tr><td>SOL/USDT</td><td>Long</td><td>120</td><td>146.5</td><td class="text-success">+$230</td></tr>
+          </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- D4: Education -->
+    <section id="d4" class="section">
+      <h5 class="mb-3">Education LMS • Analytics</h5>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Active Students</div><div class="value">3,214</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Avg. Score</div><div class="value">82%</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Completion</div><div class="value">67%</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Churn</div><div class="value text-warning">4.2%</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><div class="d-flex justify-content-between"><h6 class="mb-0">Engagement</h6><small class="text-muted">Weekly</small></div><canvas id="c4a" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Course Mix</h6><canvas id="c4b" height="160"></canvas></div></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="table-responsive"><table class="table align-middle mb-0">
+          <thead><tr><th>Course</th><th>Enrollments</th><th>Avg Grade</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Intro to AI</td><td>820</td><td>88%</td><td><span class="badge text-bg-success">Open</span></td></tr>
+            <tr><td>UI/UX Design</td><td>540</td><td>79%</td><td><span class="badge text-bg-warning">Filling</span></td></tr>
+            <tr><td>Data Science</td><td>1,030</td><td>84%</td><td><span class="badge text-bg-success">Open</span></td></tr>
+          </tbody></table></div>
+      </div>
+    </section>
+
+    <!-- D5: Weather -->
+    <section id="d5" class="section">
+      <h5 class="mb-3">Weather & Climate • Dashboard</h5>
+      <div class="row g-3">
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Temp</div><div class="value">28°C</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Humidity</div><div class="value">62%</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">Wind</div><div class="value">14 km/h</div></div></div>
+        <div class="col-6 col-lg-3"><div class="card p-3 kpi"><div class="text-muted small">AQI</div><div class="value text-warning">92</div></div></div>
+      </div>
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8"><div class="card p-3"><div class="d-flex justify-content-between"><h6 class="mb-0">Temp Trend</h6><small class="text-muted">Next 7 days</small></div><canvas id="c5a" height="110"></canvas></div></div>
+        <div class="col-lg-4"><div class="card p-3"><h6 class="mb-0">Precipitation %</h6><canvas id="c5b" height="160"></canvas></div></div>
+      </div>
+      <div class="card p-3 mt-3">
+        <div class="table-responsive"><table class="table align-middle mb-0">
+          <thead><tr><th>Day</th><th>Condition</th><th>High</th><th>Low</th></tr></thead>
+          <tbody>
+            <tr><td>Mon</td><td>Partly Cloudy</td><td>32°C</td><td>25°C</td></tr>
+            <tr><td>Tue</td><td>Sunny</td><td>34°C</td><td>26°C</td></tr>
+            <tr><td>Wed</td><td>Showers</td><td>30°C</td><td>24°C</td></tr>
+          </tbody></table></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Sidebar toggle (mobile)
+const sidebar=document.querySelector('.sidebar'); const menuBtn=document.getElementById('menuBtn');
+menuBtn?.addEventListener('click',()=>sidebar.classList.toggle('open'));
+
+// Section routing
+const links=document.querySelectorAll('.sidebar .nav-link'); const sections=document.querySelectorAll('.section');
+function showSection(id){ sections.forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+links.forEach(a=>a.addEventListener('click',()=>{ links.forEach(l=>l.classList.remove('active')); a.classList.add('active'); showSection(a.dataset.section); sidebar.classList.remove('open'); }));
+
+// Theme toggle (persist)
+const themeBtn=document.getElementById('themeToggle'); const saved=localStorage.getItem('theme'); if(saved) document.documentElement.setAttribute('data-theme',saved);
+themeBtn.addEventListener('click',()=>{ const cur=document.documentElement.getAttribute('data-theme'); const next=cur==='dark'?'light':'dark'; document.documentElement.setAttribute('data-theme',next); localStorage.setItem('theme',next); });
+const tickColor=()=>getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#93a1b7';
+const gridColor=()=>getComputedStyle(document.documentElement).getPropertyValue('--grid').trim()||'#263148';
+
+// ===== Charts =====
+// D1 Medical
+new Chart(c1a,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+  {label:'Admissions',data:[22,28,26,31,34,29,30],borderColor:'#7aa2ff',backgroundColor:'rgba(122,162,255,.18)',tension:.35,fill:true,pointRadius:2},
+  {label:'Discharges',data:[18,24,22,27,29,28,26],borderColor:'#64d2c3',backgroundColor:'rgba(100,210,195,.18)',tension:.35,fill:true,pointRadius:2}
+]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()},grid:{color:gridColor()}},y:{ticks:{color:tickColor()},grid:{color:gridColor()},beginAtZero:true}}});
+new Chart(c1b,{type:'doughnut',data:{labels:['Low','Medium','High'],datasets:[{data:[58,29,13],backgroundColor:['#22c55e','#f59e0b','#ef4444']}]},options:{plugins:{legend:{position:'bottom',labels:{color:tickColor()}}}}});
+
+// D2 E-commerce
+new Chart(c2a,{type:'bar',data:{labels:['W1','W2','W3','W4'],datasets:[
+  {label:'Revenue',data:[12,15,9,12],backgroundColor:'#7aa2ff'},
+  {label:'Orders',data:[280,350,260,314],type:'line',borderColor:'#64d2c3',tension:.3,yAxisID:'y1'}
+]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()}},y:{ticks:{color:tickColor()}},y1:{position:'right',grid:{display:false},ticks:{color:tickColor()}}}});
+new Chart(c2b,{type:'pie',data:{labels:['Electronics','Fashion','Home','Sports'],datasets:[{data:[44,22,18,16],backgroundColor:['#7aa2ff','#64d2c3','#a78bfa','#fbbf24']}]} ,options:{plugins:{legend:{position:'bottom',labels:{color:tickColor()}}}}});
+
+// D3 Crypto
+new Chart(c3a,{type:'line',data:{labels:['1','2','3','4','5','6','7','8','9','10'],datasets:[
+  {label:'BTC',data:[65,66.5,66.2,67,66.7,67.4,68,67.6,68.3,68.8],borderColor:'#22c55e',tension:.35},
+  {label:'ETH',data:[3.2,3.3,3.28,3.35,3.36,3.4,3.38,3.45,3.42,3.5],borderColor:'#7aa2ff',tension:.35}
+]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()},grid:{color:gridColor()}},y:{ticks:{color:tickColor()},grid:{color:gridColor()},beginAtZero:false}}});
+new Chart(c3b,{type:'doughnut',data:{labels:['BTC','ETH','SOL','Others'],datasets:[{data:[52,28,12,8],backgroundColor:['#f59e0b','#7aa2ff','#22c55e','#94a3b8']}]} ,options:{plugins:{legend:{position:'bottom',labels:{color:tickColor()}}}}});
+
+// D4 Education
+new Chart(c4a,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+  {label:'Active Users',data:[420,510,480,560,590,430,390],borderColor:'#7aa2ff',backgroundColor:'rgba(122,162,255,.15)',tension:.35,fill:true},
+  {label:'Sessions',data:[900,1040,980,1120,1200,860,810],borderColor:'#64d2c3',tension:.35}
+]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()},grid:{color:gridColor()}},y:{ticks:{color:tickColor()},grid:{color:gridColor()},beginAtZero:true}}});
+new Chart(c4b,{type:'pie',data:{labels:['AI','Design','Data','Business'],datasets:[{data:[26,22,34,18],backgroundColor:['#7aa2ff','#a78bfa','#64d2c3','#fbbf24']}]} ,options:{plugins:{legend:{position:'bottom',labels:{color:tickColor()}}}}});
+
+// D5 Weather
+new Chart(c5a,{type:'line',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[
+  {label:'High',data:[32,34,30,31,33,35,36],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,.15)',tension:.35,fill:true},
+  {label:'Low',data:[25,26,24,24,25,26,27],borderColor:'#7aa2ff',backgroundColor:'rgba(122,162,255,.15)',tension:.35,fill:true}
+]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()},grid:{color:gridColor()}},y:{ticks:{color:tickColor()},grid:{color:gridColor()},beginAtZero:false}}});
+new Chart(c5b,{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Rain %',data:[10,5,60,30,15,20,40],backgroundColor:'#64d2c3'}]},options:{plugins:{legend:{labels:{color:tickColor()}}},scales:{x:{ticks:{color:tickColor()}},y:{ticks:{color:tickColor()},beginAtZero:true}}});
+</script>
+</body>
+</html>

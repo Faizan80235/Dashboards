@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Medical Assistant • Dashboard</title>
+
+  <!-- Bootstrap + Icons + Chart.js (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ===== Design Tokens ===== */
+    :root{
+      --bg:#0e1320;
+      --surface:#141a2a;
+      --elev:#182237;
+      --text:#e9eef5;
+      --muted:#93a1b7;
+      --brand:#64d2c3;        /* teal */
+      --brand-2:#7aa2ff;      /* indigo */
+      --ok:#34d399; --warn:#fbbf24; --bad:#ef4444;
+      --ring:0 0 0 .25rem rgba(122,162,255,.25);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --grid:#263148;
+    }
+    [data-theme="light"]{
+      --bg:#f5f7fb; --surface:#ffffff; --elev:#ffffff;
+      --text:#0b1324; --muted:#5d6a7a;
+      --shadow:0 10px 30px rgba(14,19,32,.08);
+      --grid:#e6e9f2;
+    }
+
+    /* ===== Base ===== */
+    html,body{height:100%}
+    body{
+      background:
+        radial-gradient(1200px 700px at -10% -20%, rgba(122,162,255,.12), transparent 60%),
+        radial-gradient(1000px 600px at 110% 10%, rgba(100,210,195,.12), transparent 60%),
+        var(--bg);
+      color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans";
+    }
+    .ring:focus{box-shadow:var(--ring); outline:none}
+    .btn-brand{background:var(--brand); color:#0a121a; border:0}
+    .btn-brand:hover{filter:brightness(1.08)}
+    .text-muted{color:var(--muted)!important}
+
+    /* ===== Shell Layout ===== */
+    .app{
+      display:grid; min-height:100vh;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 64px 1fr;
+      grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+    }
+    .topbar{
+      grid-area:topbar; backdrop-filter:blur(10px);
+      background:rgba(20,26,42,.7);
+      border-bottom:1px solid rgba(255,255,255,.06);
+      z-index:1000;
+    }
+    [data-theme="light"] .topbar{background:rgba(255,255,255,.85); border-color:rgba(11,19,36,.06)}
+    .sidebar{
+      grid-area:sidebar; position:sticky; top:0; height:100vh;
+      background:var(--surface); border-right:1px solid rgba(255,255,255,.06);
+      box-shadow:var(--shadow); z-index:1020;
+    }
+    [data-theme="light"] .sidebar{border-color:rgba(11,19,36,.06)}
+    .main{grid-area:main; padding:24px}
+
+    /* ===== Sidebar ===== */
+    .brand{padding:16px 18px; border-bottom:1px solid rgba(255,255,255,.06); font-weight:700; letter-spacing:.2px}
+    .nav-link{
+      display:flex; align-items:center; gap:12px;
+      color:var(--muted); border-radius:12px;
+      margin:6px 12px; padding:10px 12px; transition:.2s ease;
+    }
+    .nav-link:hover{background:rgba(255,255,255,.06); color:var(--text); transform:translateX(3px)}
+    .nav-link.active{background:linear-gradient(90deg, rgba(122,162,255,.18), rgba(100,210,195,.18)); color:var(--text)}
+
+    /* ===== Cards / Surfaces ===== */
+    .card{
+      background:var(--surface); border:1px solid rgba(255,255,255,.06); box-shadow:var(--shadow)
+    }
+    .kpi{
+      position:relative; overflow:hidden
+    }
+    .kpi::after{
+      content:""; position:absolute; inset:-20%; background:
+        radial-gradient(600px 220px at 20% -20%, rgba(122,162,255,.10), transparent 60%),
+        radial-gradient(500px 220px at 110% 120%, rgba(100,210,195,.12), transparent 60%);
+      pointer-events:none
+    }
+    .kpi .value{font-weight:800; font-size:1.9rem}
+    .up{color:var(--ok)} .down{color:var(--bad)}
+    .badge-soft{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12)}
+
+    /* ===== Sections ===== */
+    .section{display:none; animation:fade .35s ease both}
+    .section.active{display:block}
+    @keyframes fade{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:none}}
+
+    /* ===== Assist Chat ===== */
+    .chat-pane{height:420px; overflow:auto; background:var(--elev); border-radius:12px; border:1px solid rgba(255,255,255,.06)}
+    .msg{display:flex; gap:10px; margin:12px}
+    .msg.ai .bubble{background:rgba(122,162,255,.16)}
+    .msg.me{justify-content:flex-end}
+    .bubble{max-width:80%; padding:10px 12px; border-radius:12px; background:rgba(255,255,255,.06)}
+    .chat-input{background:rgba(255,255,255,.06)!important; border:0!important; color:var(--text)!important}
+
+    /* ===== Tables ===== */
+    .table thead th{border-bottom:1px solid rgba(255,255,255,.12)}
+    .table tbody td{border-top:1px solid rgba(255,255,255,.06)}
+
+    /* ===== Responsive ===== */
+    @media (max-width: 992px){
+      .app{grid-template-columns:0 1fr}
+      .sidebar{position:fixed; left:-300px; width:280px; transition:left .25s ease}
+      .sidebar.open{left:0}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" role="navigation" aria-label="Primary">
+      <div class="brand d-flex align-items-center gap-2">
+        <i class="bi bi-activity text-info fs-4"></i><span>MedicAI</span>
+      </div>
+      <nav class="mt-2">
+        <a class="nav-link active" data-section="dashboard"><i class="bi bi-speedometer2"></i> Overview</a>
+        <a class="nav-link" data-section="patients"><i class="bi bi-people"></i> Patients</a>
+        <a class="nav-link" data-section="triage"><i class="bi bi-heart-pulse"></i> Triage</a>
+        <a class="nav-link" data-section="imaging"><i class="bi bi-magnet"></i> Imaging</a>
+        <a class="nav-link" data-section="labs"><i class="bi bi-beaker"></i> Labs</a>
+        <a class="nav-link" data-section="appointments"><i class="bi bi-calendar3"></i> Appointments</a>
+        <a class="nav-link" data-section="assistant"><i class="bi bi-chat-dots"></i> AI Assistant</a>
+        <a class="nav-link" data-section="settings"><i class="bi bi-gear"></i> Settings</a>
+      </nav>
+      <div class="p-3 small text-muted">
+        <div class="d-flex align-items-center justify-content-between">
+          <span>Theme</span>
+          <button id="themeToggle" class="btn btn-sm btn-outline-light ring" aria-label="Toggle theme">
+            <i class="bi bi-moon-stars"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Topbar -->
+    <header class="topbar d-flex align-items-center px-3 gap-2" role="banner">
+      <button class="btn btn-outline-light d-lg-none ring" id="menuBtn" aria-label="Open menu">
+        <i class="bi bi-list"></i>
+      </button>
+
+      <div class="input-group" style="max-width: 560px;">
+        <span class="input-group-text border-0 bg-transparent text-muted"><i class="bi bi-search"></i></span>
+        <input class="form-control chat-input" placeholder="Search patients, labs, orders..." aria-label="Search" />
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <span class="badge badge-soft rounded-pill">HIPAA Safe Demo</span>
+        <button class="btn btn-outline-light ring" aria-label="Notifications"><i class="bi bi-bell"></i></button>
+        <div class="dropdown">
+          <button class="btn btn-outline-light ring dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-person-circle me-1"></i> Dr. Patel
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Preferences</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#">Sign out</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main" role="main">
+      <!-- ===== Overview ===== -->
+      <section id="dashboard" class="section active" aria-labelledby="overview-title">
+        <h5 id="overview-title" class="mb-3">Today at a glance</h5>
+
+        <div class="row g-3">
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card kpi p-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><div class="text-muted small">Admissions</div><div class="value">42</div></div>
+                <span class="up fw-semibold"><i class="bi bi-arrow-up-right"></i> 8%</span>
+              </div>
+              <div class="progress mt-3"><div class="progress-bar bg-info" style="width:66%"></div></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card kpi p-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><div class="text-muted small">Avg. Wait</div><div class="value">13m</div></div>
+                <span class="down fw-semibold"><i class="bi bi-arrow-down-right"></i> 5%</span>
+              </div>
+              <div class="progress mt-3"><div class="progress-bar bg-success" style="width:74%"></div></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card kpi p-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><div class="text-muted small">Critical Cases</div><div class="value">6</div></div>
+                <span class="up fw-semibold"><i class="bi bi-activity"></i></span>
+              </div>
+              <div class="progress mt-3"><div class="progress-bar bg-danger" style="width:40%"></div></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card kpi p-3">
+              <div class="d-flex justify-content-between align-items-start">
+                <div><div class="text-muted small">Bed Utilization</div><div class="value">76%</div></div>
+                <span class="up fw-semibold"><i class="bi bi-arrow-up-right"></i> 3%</span>
+              </div>
+              <div class="progress mt-3"><div class="progress-bar" style="width:76%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-lg-8">
+            <div class="card p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Admissions & Discharges</h6>
+                <small class="text-muted">Last 7 days</small>
+              </div>
+              <canvas id="admChart" height="110" aria-label="Admissions chart"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card p-3">
+              <h6 class="mb-0">Triage Severity Mix</h6>
+              <canvas id="severityChart" height="170" aria-label="Severity chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Patients ===== -->
+      <section id="patients" class="section" aria-labelledby="patients-title">
+        <div class="card p-3">
+          <div class="d-flex align-items-center gap-2">
+            <h6 id="patients-title" class="mb-0">Patients</h6>
+            <div class="ms-auto d-flex gap-2">
+              <input id="patientSearch" class="form-control form-control-sm chat-input" placeholder="Search by name/MRN">
+              <select id="wardFilter" class="form-select form-select-sm" style="max-width:160px">
+                <option value="">All wards</option><option>ER</option><option>ICU</option><option>Oncology</option>
+              </select>
+              <button class="btn btn-sm btn-brand">New Intake</button>
+            </div>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table align-middle">
+              <thead><tr><th>MRN</th><th>Name</th><th>Ward</th><th>Age</th><th>Dx</th><th>Risk</th><th></th></tr></thead>
+              <tbody id="patientBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Triage ===== -->
+      <section id="triage" class="section">
+        <div class="row g-3">
+          <div class="col-lg-5">
+            <div class="card p-3">
+              <h6 class="mb-2">Live Vitals</h6>
+              <canvas id="vitalsChart" height="180" aria-label="Vitals chart"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-7">
+            <div class="card p-3">
+              <h6 class="mb-2">Queue</h6>
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead><tr><th>#</th><th>Name</th><th>Complaint</th><th>ESI</th><th>Wait</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>Q-104</td><td>Maria S.</td><td>Chest pain</td><td><span class="badge text-bg-danger">2</span></td><td>07m</td><td><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+                    <tr><td>Q-105</td><td>Ahmed R.</td><td>High fever</td><td><span class="badge text-bg-warning">3</span></td><td>11m</td><td><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+                    <tr><td>Q-106</td><td>Nora J.</td><td>Head injury</td><td><span class="badge text-bg-danger">2</span></td><td>05m</td><td><button class="btn btn-sm btn-outline-light">Open</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Imaging ===== -->
+      <section id="imaging" class="section">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card p-3">
+              <h6 class="mb-2">Modality Utilization</h6>
+              <canvas id="modalityChart" height="170" aria-label="Modality chart"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card p-3">
+              <h6 class="mb-2">Turnaround Time (mins)</h6>
+              <canvas id="tatChart" height="170" aria-label="Turnaround chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Labs ===== -->
+      <section id="labs" class="section">
+        <div class="card p-3">
+          <div class="d-flex align-items-center">
+            <h6 class="mb-0">Lab Panels</h6>
+            <div class="ms-auto small text-muted">Last 24h</div>
+          </div>
+          <canvas id="labsChart" height="140" aria-label="Labs chart"></canvas>
+        </div>
+      </section>
+
+      <!-- ===== Appointments ===== -->
+      <section id="appointments" class="section">
+        <div class="row g-3">
+          <div class="col-lg-7">
+            <div class="card p-3">
+              <h6 class="mb-2">Today’s Schedule</h6>
+              <div class="table-responsive">
+                <table class="table align-middle">
+                  <thead><tr><th>Time</th><th>Patient</th><th>Type</th><th>Room</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>09:00</td><td>Henry L.</td><td>Follow-up</td><td>R12</td><td><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+                    <tr><td>10:30</td><td>Amira Q.</td><td>Cardiology</td><td>R08</td><td><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+                    <tr><td>11:15</td><td>Wei T.</td><td>Imaging</td><td>CT-2</td><td><button class="btn btn-sm btn-outline-light">Details</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card p-3">
+              <h6 class="mb-2">Utilization</h6>
+              <canvas id="utilChart" height="180" aria-label="Utilization chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== AI Assistant ===== -->
+      <section id="assistant" class="section" aria-labelledby="assistant-title">
+        <div class="row g-3">
+          <div class="col-lg-7">
+            <div class="card p-3">
+              <h6 id="assistant-title" class="mb-2">Assistant Chat</h6>
+              <div id="chat" class="chat-pane" aria-live="polite">
+                <div class="msg ai">
+                  <div class="bubble">Hello doctor 👋 — how can I assist? Try: “summarize labs for MRN 30214”.</div>
+                </div>
+              </div>
+              <div class="input-group mt-2">
+                <input id="chatInput" class="form-control chat-input" placeholder="Type a prompt...">
+                <button id="sendBtn" class="btn btn-brand">Send</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-5">
+            <div class="card p-3">
+              <h6 class="mb-2">Quick Insights</h6>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                  Sepsis watchlist <span class="badge text-bg-danger">3 high risk</span>
+                </li>
+                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                  Imaging backlog <span class="badge text-bg-warning">CT +2</span>
+                </li>
+                <li class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                  Discharge ready <span class="badge text-bg-success">5</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Settings ===== -->
+      <section id="settings" class="section">
+        <div class="card p-3">
+          <h6>Settings</h6>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6"><label class="form-label">Hospital</label><input class="form-control chat-input" value="City General"></div>
+            <div class="col-md-6"><label class="form-label">Notifications</label><select class="form-select chat-input"><option>All</option><option>Critical only</option></select></div>
+            <div class="col-12"><button class="btn btn-brand mt-2 ring">Save</button></div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    /* ===== Sidebar & Section Routing ===== */
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.getElementById('menuBtn');
+    const links = document.querySelectorAll('.sidebar .nav-link');
+    const sections = document.querySelectorAll('.section');
+    function showSection(id){
+      sections.forEach(s=>s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    links.forEach(a=>{
+      a.addEventListener('click', ()=>{
+        links.forEach(l=>l.classList.remove('active'));
+        a.classList.add('active');
+        showSection(a.dataset.section);
+        sidebar.classList.remove('open'); // close on mobile
+      });
+    });
+    menuBtn?.addEventListener('click', ()=>sidebar.classList.toggle('open'));
+
+    /* ===== Theme Toggle (persist) — FIXED ICON STATE ===== */
+    const themeBtn = document.getElementById('themeToggle');
+    const saved = localStorage.getItem('theme');
+    if(saved) document.documentElement.setAttribute('data-theme', saved);
+
+    function setThemeIcon(){
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      themeBtn.innerHTML = current === 'dark'
+        ? '<i class="bi bi-moon-stars"></i>'
+        : '<i class="bi bi-sun"></i>';
+    }
+    // Set correct icon on initial load
+    setThemeIcon();
+
+    themeBtn.addEventListener('click', ()=>{
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current==='dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      setThemeIcon(); // update icon after toggle
+    });
+
+    /* ===== Patients Demo Data + Filters ===== */
+    const patients = [
+      { mrn:'30214', name:'Henry Liu', ward:'ER', age:54, dx:'Chest Pain', risk:'High' },
+      { mrn:'29877', name:'Amira Qureshi', ward:'Oncology', age:46, dx:'Anemia', risk:'Low' },
+      { mrn:'30001', name:'Nora James', ward:'ICU', age:39, dx:'TBI', risk:'High' },
+      { mrn:'29721', name:'Ahmed Rafi', ward:'ER', age:33, dx:'Fever', risk:'Medium' },
+      { mrn:'30302', name:'Sara Kim', ward:'ICU', age:71, dx:'Sepsis', risk:'High' },
+    ];
+    const patientBody = document.getElementById('patientBody');
+    const patientSearch = document.getElementById('patientSearch');
+    const wardFilter = document.getElementById('wardFilter');
+
+    function renderPatients(){
+      const q = (patientSearch.value||'').toLowerCase();
+      const w = wardFilter.value;
+      patientBody.innerHTML='';
+      patients
+        .filter(p => (!w || p.ward===w) && (p.mrn.includes(q) || p.name.toLowerCase().includes(q)))
+        .forEach(p=>{
+          const badge = p.risk==='High' ? 'text-bg-danger' : p.risk==='Medium' ? 'text-bg-warning' : 'text-bg-success';
+          patientBody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>${p.mrn}</td>
+              <td>${p.name}</td>
+              <td>${p.ward}</td>
+              <td>${p.age}</td>
+              <td>${p.dx}</td>
+              <td><span class="badge ${badge}">${p.risk}</span></td>
+              <td class="text-end"><button class="btn btn-sm btn-outline-light">Open</button></td>
+            </tr>
+          `);
+        });
+    }
+    patientSearch.addEventListener('input', renderPatients);
+    wardFilter.addEventListener('change', renderPatients);
+    renderPatients();
+
+    /* ===== Chat (demo) ===== */
+    const chat = document.getElementById('chat');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    function pushMessage(text, who='me'){
+      const msg = document.createElement('div'); msg.className = `msg ${who}`;
+      msg.innerHTML = `<div class="bubble">${text}</div>`;
+      chat.appendChild(msg); chat.scrollTop = chat.scrollHeight;
+    }
+    function assistantReply(prompt){
+      // demo response
+      const lower = prompt.toLowerCase();
+      if(lower.includes('labs') && lower.match(/\d{5}/)){
+        pushMessage('MRN found. Latest labs: WBC 11.2 ↑, Hb 12.8, Cr 0.9. Trend stable. Consider repeat CBC in 6h.', 'ai');
+      } else if(lower.includes('sepsis')){
+        pushMessage('Sepsis screen: lactate pending; qSOFA 1; SIRS 2. Suggest fluids bolus 30ml/kg if MAP <65 and draw cultures.', 'ai');
+      } else {
+        pushMessage('Got it. I can summarize labs, triage risk, or draft notes. Add an MRN for patient-specific insights.', 'ai');
+      }
+    }
+    sendBtn.addEventListener('click', ()=>{
+      const t = chatInput.value.trim(); if(!t) return;
+      pushMessage(t,'me'); chatInput.value='';
+      setTimeout(()=>assistantReply(t), 400);
+    });
+    chatInput.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); sendBtn.click(); }});
+
+    /* ===== Charts ===== */
+    const tickColor = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#93a1b7';
+    function grid(){ return {color:getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() || '#263148'} }
+
+    new Chart(document.getElementById('admChart'),{
+      type:'line',
+      data:{ labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+        datasets:[
+          { label:'Admissions', data:[22,28,26,31,34,29,30], borderColor:'#7aa2ff', backgroundColor:'rgba(122,162,255,.15)', tension:.35, fill:true, pointRadius:2 },
+          { label:'Discharges', data:[18,24,22,27,29,28,26], borderColor:'#64d2c3', backgroundColor:'rgba(100,210,195,.15)', tension:.35, fill:true, pointRadius:2 }
+        ]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}},
+        scales:{ x:{ticks:{color:tickColor}, grid:grid()}, y:{ticks:{color:tickColor}, grid:grid(), beginAtZero:true} }
+    });
+
+    new Chart(document.getElementById('severityChart'),{
+      type:'doughnut',
+      data:{ labels:['Low','Medium','High'], datasets:[{ data:[58,29,13], backgroundColor:['#34d399','#fbbf24','#ef4444'] }]},
+      options:{ plugins:{legend:{position:'bottom', labels:{color:tickColor}}} }
+    });
+
+    new Chart(document.getElementById('vitalsChart'),{
+      type:'line',
+      data:{ labels:['0','1','2','3','4','5','6','7','8','9'],
+        datasets:[
+          {label:'HR', data:[78,82,80,88,84,86,90,92,88,85], borderColor:'#ef4444', tension:.3},
+          {label:'SpO₂', data:[98,97,98,97,96,97,98,99,98,97], borderColor:'#7aa2ff', tension:.3},
+        ]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}}, scales:{x:{ticks:{color:tickColor}, grid:grid()}, y:{ticks:{color:tickColor}, grid:grid(), beginAtZero:false}}}
+    });
+
+    new Chart(document.getElementById('modalityChart'),{
+      type:'bar',
+      data:{ labels:['XR','CT','MRI','US','PET'],
+        datasets:[{label:'Studies', data:[62,28,14,33,6], backgroundColor:['#7aa2ff','#64d2c3','#ffd166','#f28b82','#a78bfa']}]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}}, scales:{x:{ticks:{color:tickColor}}, y:{ticks:{color:tickColor}, beginAtZero:true}}}
+    });
+
+    new Chart(document.getElementById('tatChart'),{
+      type:'bar',
+      data:{ labels:['XR','CT','MRI','US','PET'], datasets:[{label:'TAT (min)', data:[22,45,68,30,55], backgroundColor:'#ffd166'}]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}}, scales:{x:{ticks:{color:tickColor}}, y:{ticks:{color:tickColor}, beginAtZero:true}}}
+    });
+
+    new Chart(document.getElementById('labsChart'),{
+      type:'line',
+      data:{ labels:['00','04','08','12','16','20','24'],
+        datasets:[{label:'Panels Processed', data:[18,22,25,31,28,26,24], borderColor:'#64d2c3', backgroundColor:'rgba(100,210,195,.18)', tension:.35, fill:true}]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}}, scales:{x:{ticks:{color:tickColor}, grid:grid()}, y:{ticks:{color:tickColor}, grid:grid(), beginAtZero:true}}}
+    });
+
+    new Chart(document.getElementById('utilChart'),{
+      type:'radar',
+      data:{ labels:['ER','ICU','Ward A','Ward B','Imaging','Lab'],
+        datasets:[{label:'Utilization', data:[82,76,64,58,71,66], backgroundColor:'rgba(122,162,255,.18)', borderColor:'#7aa2ff'}]},
+      options:{ plugins:{legend:{labels:{color:tickColor}}}, scales:{ r:{angleLines:{color:getComputedStyle(document.documentElement).getPropertyValue('--grid')}, grid:{color:getComputedStyle(document.documentElement).getPropertyValue('--grid')}, pointLabels:{color:tickColor}, ticks:{display:false}} } }
+    });
+  </script>
+</body>
+</html>

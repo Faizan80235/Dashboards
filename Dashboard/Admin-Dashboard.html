@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pro Admin Dashboard</title>
+
+  <!-- Bootstrap 5 + Icons + Chart.js -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* ---------- Theme Variables ---------- */
+    :root {
+      --bg: #0f1218;
+      --surface: #141925;
+      --muted: #8b97a7;
+      --text: #e9eef5;
+      --brand: #6ea8fe;
+      --brand-2: #7bdecc;
+      --card-gradient: linear-gradient(135deg, rgba(110,168,254,.15), rgba(123,222,204,.12));
+      --ring: 0 0 0 .25rem rgba(110,168,254,.25);
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+    [data-theme="light"] {
+      --bg: #f4f6fb;
+      --surface: #ffffff;
+      --muted: #5d6a7a;
+      --text: #0b1324;
+      --card-gradient: linear-gradient(135deg, rgba(110,168,254,.18), rgba(123,222,204,.16));
+      --shadow: 0 10px 25px rgba(22,28,45,.08);
+    }
+
+    /* ---------- Base ---------- */
+    html, body { height: 100%; }
+    body {
+      background: radial-gradient(1200px 700px at 10% -10%, rgba(110,168,254,.06), transparent 60%),
+                  radial-gradient(900px 600px at 100% 10%, rgba(123,222,204,.06), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol", "Noto Color Emoji";
+    }
+    .btn-brand { background: var(--brand); color:#081120; border:0; }
+    .btn-brand:hover { filter: brightness(1.1); }
+    .ring-focus:focus { box-shadow: var(--ring); outline: none; }
+
+    /* ---------- Layout ---------- */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      grid-template-rows: 64px 1fr;
+      grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+      min-height: 100vh;
+    }
+    .topbar { grid-area: topbar; backdrop-filter: blur(8px); background: rgba(20,25,37,.65); border-bottom: 1px solid rgba(255,255,255,.06); }
+    [data-theme="light"] .topbar { background: rgba(255,255,255,.7); border-color: rgba(11,19,36,.06); }
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--surface);
+      border-right: 1px solid rgba(255,255,255,.06);
+      position: sticky; top: 0; height: 100vh;
+      box-shadow: var(--shadow);
+    }
+    [data-theme="light"] .sidebar { border-color: rgba(11,19,36,.06); }
+    .main { grid-area: main; padding: 24px; }
+
+    /* ---------- Sidebar ---------- */
+    .brand {
+      gap: .6rem; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,.06);
+      font-weight: 700; letter-spacing: .2px;
+    }
+    .nav-link {
+      color: var(--muted);
+      border-radius: 10px; margin: 6px 12px; padding: 10px 12px;
+      display: flex; align-items: center; gap: 10px;
+      transition: .2s ease;
+    }
+    .nav-link:hover { background: rgba(255,255,255,.05); color: var(--text); transform: translateX(3px); }
+    .nav-link.active { background: linear-gradient(90deg, rgba(110,168,254,.18), rgba(123,222,204,.18)); color: var(--text); }
+
+    /* ---------- Cards ---------- */
+    .card {
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.06);
+      box-shadow: var(--shadow);
+    }
+    .card.metric {
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .card.metric .bg-sheen {
+      position: absolute; inset: 0;
+      background: var(--card-gradient);
+      filter: blur(0); opacity: .9; pointer-events: none;
+    }
+    .metric .value { font-weight: 800; font-size: 1.75rem; }
+    .metric .delta.up { color: #4bd28f; }
+    .metric .delta.down { color: #ff6b6b; }
+
+    /* ---------- Little niceties ---------- */
+    .search-input {
+      background: rgba(255,255,255,.06) !important; border: none !important; color: var(--text) !important;
+    }
+    [data-theme="light"] .search-input { background: rgba(11,19,36,.06) !important; }
+    .section { display: none; animation: fade .35s ease both; }
+    .section.active { display: block; }
+    @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity:1; transform:none;} }
+
+    /* ---------- Responsive ---------- */
+    @media (max-width: 992px) {
+      .app { grid-template-columns: 0 1fr; }
+      .sidebar { position: fixed; left: -280px; width: 260px; z-index: 1040; transition: left .25s ease; }
+      .sidebar.open { left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+
+    <!-- Sidebar -->
+    <aside class="sidebar d-flex flex-column">
+      <div class="brand d-flex align-items-center">
+        <i class="bi bi-stars fs-4 text-primary"></i>
+        <span>Nova Admin</span>
+      </div>
+
+      <nav class="mt-2 flex-grow-1">
+        <a class="nav-link active" data-section="dashboard"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a class="nav-link" data-section="orders"><i class="bi bi-bag-check"></i> Orders</a>
+        <a class="nav-link" data-section="products"><i class="bi bi-box-seam"></i> Products</a>
+        <a class="nav-link" data-section="customers"><i class="bi bi-people"></i> Customers</a>
+        <a class="nav-link" data-section="reports"><i class="bi bi-graph-up"></i> Reports</a>
+        <a class="nav-link" data-section="settings"><i class="bi bi-gear"></i> Settings</a>
+      </nav>
+
+      <div class="p-3 small text-muted">
+        <div class="d-flex align-items-center justify-content-between">
+          <span>Theme</span>
+          <button id="themeToggle" class="btn btn-sm btn-outline-light ring-focus"><i class="bi bi-moon-stars"></i></button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Topbar -->
+    <header class="topbar d-flex align-items-center px-3 gap-2">
+      <button class="btn btn-outline-light d-lg-none ring-focus" id="menuBtn"><i class="bi bi-list"></i></button>
+
+      <div class="input-group" style="max-width: 520px;">
+        <span class="input-group-text border-0 bg-transparent text-muted"><i class="bi bi-search"></i></span>
+        <input class="form-control search-input" placeholder="Search orders, customers, products…" />
+      </div>
+
+      <div class="ms-auto d-flex align-items-center gap-2">
+        <button class="btn btn-outline-light ring-focus"><i class="bi bi-bell"></i></button>
+        <div class="dropdown">
+          <button class="btn btn-outline-light dropdown-toggle ring-focus" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle me-1"></i> Admin
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="#">Profile</a></li>
+            <li><a class="dropdown-item" href="#">Billing</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#">Sign out</a></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- DASHBOARD -->
+      <section id="dashboard" class="section active">
+        <div class="row g-3">
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card metric position-relative p-3">
+              <div class="bg-sheen"></div>
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="text-muted small">Total Sales</div>
+                  <div class="value">$82,450</div>
+                </div>
+                <span class="delta up"><i class="bi bi-arrow-up-right"></i> 12%</span>
+              </div>
+              <div class="mt-3 progress" role="progressbar" aria-label="Sales goal" aria-valuenow="72" aria-valuemin="0" aria-valuemax="100">
+                <div class="progress-bar" style="width:72%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card metric position-relative p-3">
+              <div class="bg-sheen"></div>
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="text-muted small">Orders</div>
+                  <div class="value">1,264</div>
+                </div>
+                <span class="delta up"><i class="bi bi-arrow-up-right"></i> 5%</span>
+              </div>
+              <div class="mt-3 progress"><div class="progress-bar bg-success" style="width:60%"></div></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card metric position-relative p-3">
+              <div class="bg-sheen"></div>
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="text-muted small">Revenue</div>
+                  <div class="value">$54,920</div>
+                </div>
+                <span class="delta down"><i class="bi bi-arrow-down-right"></i> 2%</span>
+              </div>
+              <div class="mt-3 progress"><div class="progress-bar bg-danger" style="width:48%"></div></div>
+            </div>
+          </div>
+          <div class="col-12 col-md-6 col-xl-3">
+            <div class="card metric position-relative p-3">
+              <div class="bg-sheen"></div>
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="text-muted small">New Customers</div>
+                  <div class="value">348</div>
+                </div>
+                <span class="delta up"><i class="bi bi-arrow-up-right"></i> 9%</span>
+              </div>
+              <div class="mt-3 progress"><div class="progress-bar bg-info" style="width:66%"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+          <div class="col-lg-8">
+            <div class="card p-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Sales Overview</h6>
+                <div class="small text-muted">Last 7 months</div>
+              </div>
+              <canvas id="salesChart" height="110"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="card p-3">
+              <h6 class="mb-0">Top Categories</h6>
+              <canvas id="categoryChart" height="170"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ORDERS -->
+      <section id="orders" class="section">
+        <div class="card p-3">
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <h5 class="mb-0">Orders</h5>
+            <div class="ms-auto d-flex gap-2">
+              <input id="orderSearch" class="form-control form-control-sm search-input" placeholder="Search orders…">
+              <select id="statusFilter" class="form-select form-select-sm" style="max-width: 160px;">
+                <option value="">All Status</option>
+                <option>Completed</option>
+                <option>Pending</option>
+                <option>Cancelled</option>
+              </select>
+              <button class="btn btn-sm btn-brand">Export</button>
+            </div>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table align-middle">
+              <thead>
+                <tr><th>#</th><th>Customer</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr>
+              </thead>
+              <tbody id="ordersBody">
+                <!-- rows injected by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PRODUCTS -->
+      <section id="products" class="section">
+        <div class="row g-3">
+          <div class="col-12 col-lg-4">
+            <div class="card p-3">
+              <h6 class="mb-2">Inventory Health</h6>
+              <canvas id="inventoryChart" height="160"></canvas>
+            </div>
+          </div>
+          <div class="col-12 col-lg-8">
+            <div class="card p-3">
+              <div class="d-flex align-items-center">
+                <h6 class="mb-0">Product List</h6>
+                <button class="btn btn-sm btn-brand ms-auto" data-bs-toggle="modal" data-bs-target="#productModal">
+                  <i class="bi bi-plus-lg me-1"></i>Add Product
+                </button>
+              </div>
+              <div class="table-responsive mt-3">
+                <table class="table align-middle">
+                  <thead><tr><th>SKU</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr></thead>
+                  <tbody>
+                    <tr><td>SKU-1001</td><td>Sport Shoes</td><td>$79</td><td><span class="badge text-bg-success">In Stock</span></td><td><button class="btn btn-sm btn-outline-light">Edit</button></td></tr>
+                    <tr><td>SKU-1002</td><td>Leather Bag</td><td>$129</td><td><span class="badge text-bg-warning">Low</span></td><td><button class="btn btn-sm btn-outline-light">Edit</button></td></tr>
+                    <tr><td>SKU-1003</td><td>Smart Watch</td><td>$199</td><td><span class="badge text-bg-danger">Out</span></td><td><button class="btn btn-sm btn-outline-light">Edit</button></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CUSTOMERS -->
+      <section id="customers" class="section">
+        <div class="card p-3">
+          <h6>Customers</h6>
+          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mt-1">
+            <div class="col"><div class="card p-3"><div class="d-flex align-items-center gap-3"><i class="bi bi-person-badge fs-3"></i><div><strong>John Doe</strong><div class="small text-muted">john@example.com</div></div></div></div></div>
+            <div class="col"><div class="card p-3"><div class="d-flex align-items-center gap-3"><i class="bi bi-person-badge fs-3"></i><div><strong>Jane Smith</strong><div class="small text-muted">jane@example.com</div></div></div></div></div>
+            <div class="col"><div class="card p-3"><div class="d-flex align-items-center gap-3"><i class="bi bi-person-badge fs-3"></i><div><strong>Mike Lee</strong><div class="small text-muted">mike@example.com</div></div></div></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section id="reports" class="section">
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card p-3"><h6>Monthly Revenue</h6><canvas id="revChart" height="140"></canvas></div>
+          </div>
+          <div class="col-lg-6">
+            <div class="card p-3"><h6>Conversion Funnel</h6><canvas id="funnelChart" height="140"></canvas></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="settings" class="section">
+        <div class="card p-3">
+          <h6>Settings</h6>
+          <div class="row g-3 mt-1">
+            <div class="col-md-6">
+              <label class="form-label">Store Name</label>
+              <input class="form-control search-input" value="Nova Store">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Support Email</label>
+              <input class="form-control search-input" value="support@nova.dev">
+            </div>
+            <div class="col-12">
+              <button class="btn btn-brand mt-2 ring-focus">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div class="modal fade" id="productModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="background:var(--surface); color:var(--text); border:1px solid rgba(255,255,255,.06);">
+        <div class="modal-header">
+          <h6 class="modal-title">Add New Product</h6>
+          <button class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">Product Name</label>
+            <input class="form-control search-input" placeholder="Name">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Price</label>
+            <input class="form-control search-input" placeholder="$0.00">
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Stock</label>
+            <input class="form-control search-input" placeholder="Qty">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-brand">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ---------- Sidebar + Section switching ----------
+    const sidebar = document.querySelector('.sidebar');
+    const menuBtn = document.getElementById('menuBtn');
+    const links = document.querySelectorAll('.sidebar .nav-link');
+    const sections = document.querySelectorAll('.section');
+
+    function showSection(id) {
+      sections.forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+    links.forEach(a => {
+      a.addEventListener('click', () => {
+        links.forEach(l => l.classList.remove('active'));
+        a.classList.add('active');
+        showSection(a.dataset.section);
+        // close on mobile
+        sidebar.classList.remove('open');
+      });
+    });
+    menuBtn?.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    // ---------- Theme toggle (remembers choice) ----------
+    const themeBtn = document.getElementById('themeToggle');
+    const root = document.documentElement;
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) document.documentElement.setAttribute('data-theme', savedTheme);
+    themeBtn.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      themeBtn.innerHTML = next === 'dark' ? '<i class="bi bi-moon-stars"></i>' : '<i class="bi bi-sun"></i>';
+    });
+
+    // ---------- Orders: sample data + filter ----------
+    const orders = [
+      { id: 2001, customer: 'John Doe', date: '2025-08-10', status: 'Completed', total: 250 },
+      { id: 2002, customer: 'Jane Smith', date: '2025-08-11', status: 'Pending', total: 180 },
+      { id: 2003, customer: 'Mike Johnson', date: '2025-08-12', status: 'Cancelled', total: 90 },
+      { id: 2004, customer: 'Aisha Khan', date: '2025-08-12', status: 'Completed', total: 420 },
+      { id: 2005, customer: 'Carlos Rivera', date: '2025-08-13', status: 'Pending', total: 120 },
+    ];
+    const ordersBody = document.getElementById('ordersBody');
+    const orderSearch = document.getElementById('orderSearch');
+    const statusFilter = document.getElementById('statusFilter');
+
+    function renderOrders() {
+      const q = (orderSearch.value || '').toLowerCase();
+      const st = statusFilter.value;
+      ordersBody.innerHTML = '';
+      orders
+        .filter(o => (!st || o.status === st) && (String(o.id).includes(q) || o.customer.toLowerCase().includes(q)))
+        .forEach(o => {
+          const badgeClass = o.status === 'Completed' ? 'text-bg-success' :
+                             o.status === 'Pending' ? 'text-bg-warning' : 'text-bg-danger';
+          ordersBody.insertAdjacentHTML('beforeend', `
+            <tr>
+              <td>#${o.id}</td>
+              <td>${o.customer}</td>
+              <td>${o.date}</td>
+              <td><span class="badge ${badgeClass}">${o.status}</span></td>
+              <td>$${o.total}</td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-outline-light">View</button>
+              </td>
+            </tr>
+          `);
+        });
+    }
+    orderSearch.addEventListener('input', renderOrders);
+    statusFilter.addEventListener('change', renderOrders);
+    renderOrders();
+
+    // ---------- Charts ----------
+    const tickColor = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#8b97a7';
+
+    new Chart(document.getElementById('salesChart'), {
+      type: 'line',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+        datasets: [{
+          label: 'Sales ($)',
+          data: [12000, 13800, 15200, 14100, 16800, 19400, 21000],
+          tension: .35,
+          fill: true,
+          borderWidth: 2,
+          borderColor: '#6ea8fe',
+          backgroundColor: 'rgba(110,168,254,.18)',
+          pointRadius: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: tickColor } } },
+        scales: {
+          x: { ticks: { color: tickColor }, grid: { color: 'rgba(255,255,255,.06)'} },
+          y: { ticks: { color: tickColor }, grid: { color: 'rgba(255,255,255,.06)'}, beginAtZero: true }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('categoryChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Shoes','Bags','Watches','Clothing'],
+        datasets: [{ data: [38, 22, 16, 24], backgroundColor: ['#6ea8fe','#7bdecc','#ffd166','#f28b82'] }]
+      },
+      options: { plugins: { legend: { position: 'bottom', labels: { color: tickColor } } } }
+    });
+
+    new Chart(document.getElementById('inventoryChart'), {
+      type: 'bar',
+      data: {
+        labels: ['In Stock','Reserved','Low','Out'],
+        datasets: [{ label: 'Units', data: [420,120,60,18], backgroundColor: ['#4bd28f','#7bdecc','#ffd166','#ff6b6b'] }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: tickColor } } },
+        scales: { x: { ticks: { color: tickColor } }, y: { ticks: { color: tickColor }, beginAtZero: true } }
+      }
+    });
+
+    new Chart(document.getElementById('revChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul'],
+        datasets: [{ label: 'Revenue ($)', data: [12,14,16,15,18,22,24], backgroundColor: '#7bdecc' }]
+      },
+      options: {
+        plugins: { legend: { labels: { color: tickColor } } },
+        scales: { x: { ticks: { color: tickColor } }, y: { ticks: { color: tickColor }, beginAtZero: true } }
+      }
+    });
+
+    new Chart(document.getElementById('funnelChart'), {
+      type: 'line',
+      data: {
+        labels: ['Visits','Views','Add to Cart','Checkout','Paid'],
+        datasets: [{
+          label: 'Users (k)',
+          data: [40, 28, 12, 8, 6],
+          borderColor: '#6ea8fe',
+          backgroundColor: 'rgba(110,168,254,.18)',
+          tension: .35,
+          fill: true
+        }]
+      },
+      options: { plugins: { legend: { labels: { color: tickColor } } },
+        scales: { x: { ticks: { color: tickColor } }, y: { ticks: { color: tickColor }, beginAtZero: true } }
+      }
+    });
+  </script>
+</body>
+</html>
